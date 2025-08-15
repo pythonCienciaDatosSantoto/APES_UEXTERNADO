@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen de Aprendizaje Estadístico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        /* Custom scrollbar for textarea */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Contenedor del temporizador -->
+    <div id="timer-container" class="hidden fixed top-4 right-4 bg-white p-2 px-4 rounded-lg shadow-lg z-10">
+        <div class="flex items-center space-x-2">
+            <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="timer" class="font-mono text-lg font-semibold text-slate-800">04:00:00</span>
+        </div>
+    </div>
+
+    <div id="main-container" class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10 transition-all duration-500">
+
+        <!-- Pantalla de Inicio -->
+        <div id="start-screen">
+            <div class="text-center">
+                <svg class="mx-auto h-16 w-16 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" />
+                </svg>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mt-4">Examen de Aprendizaje Estadístico</h1>
+                <p class="mt-3 text-slate-600 max-w-2xl mx-auto">Este examen evaluará tus conocimientos en Regresión Lineal y Regresión Logística. Tienes <b>4 horas</b> para completarlo una vez que presiones "Comenzar". ¡Mucha suerte!</p>
+            </div>
+            <div class="mt-10 max-w-md mx-auto">
+                <label for="participant-name" class="block text-sm font-medium text-slate-700 mb-2">Ingresa tu nombre completo:</label>
+                <input type="text" id="participant-name" class="block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ej: Ana María Pérez">
+                <button id="start-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform duration-200 hover:scale-105">
+                    Comenzar Examen
+                </button>
+            </div>
+        </div>
+
+        <!-- Pantalla del Cuestionario -->
+        <div id="quiz-screen" class="hidden">
+            <!-- Header del Cuestionario -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 id="question-counter" class="text-sm font-semibold text-indigo-600"></h2>
+                    <span id="quiz-section" class="text-sm font-medium text-slate-500"></span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500"></div>
+                </div>
+            </div>
+
+            <!-- Contenido de la Pregunta -->
+            <div id="question-container">
+                <h3 id="question-text" class="text-xl md:text-2xl font-bold mb-6 text-center"></h3>
+                <div id="info-box" class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700"></div>
+                <div id="answer-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Opciones de respuesta se insertarán aquí -->
+                </div>
+                <div id="open-answer-container" class="hidden mt-4">
+                    <textarea id="open-answer-text" rows="6" class="w-full p-4 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Escribe tu respuesta aquí..."></textarea>
+                    <button id="submit-open-answer-btn" class="mt-4 w-full md:w-auto float-right bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla Final -->
+        <div id="end-screen" class="hidden text-center">
+             <svg class="mx-auto h-16 w-16 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h1 id="end-title" class="text-3xl md:text-4xl font-bold text-slate-900 mt-4">¡Examen Finalizado!</h1>
+            <p id="end-message" class="mt-3 text-slate-600 max-w-2xl mx-auto">Has completado todas las preguntas. Descarga el PDF con tus respuestas y envíalo a tu profesor cuando lo consideres oportuno.</p>
+            <button id="submit-results-btn" class="mt-8 inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform duration-200 hover:scale-105">
+                Descargar Respuestas en PDF
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATOS DEL CUESTIONARIO ---
+        const questions = [
+            // --- SECCIÓN 1: REGRESIÓN LINEAL (Actualizada) ---
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'En un modelo de regresión lineal simple, Y = β₀ + β₁X + ε, ¿cómo se interpreta el coeficiente β₁?',
+                options: ['El valor de Y cuando X es cero.', 'El cambio promedio en Y por cada unidad de aumento en X.', 'La correlación entre X e Y.', 'El error estándar del modelo.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: '¿Qué mide el coeficiente de determinación (R²)?',
+                options: ['La significancia estadística del modelo.', 'La varianza de los errores del modelo.', 'La proporción de la varianza de Y que es predecible a partir de las variables independientes.', 'La pendiente de la línea de regresión.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'Un estudio sobre el efecto de un fertilizante en plantas muestra un efecto negativo general. Sin embargo, al analizar por separado plantas de "sol" y de "sombra", el fertilizante muestra un efecto positivo en ambos grupos. ¿Qué fenómeno podría explicar esto?',
+                options: ['Multicolinealidad', 'Homocedasticidad', 'Paradoja de Simpson', 'Autocorrelación']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'Un "outlier" o valor atípico en el contexto de la regresión se refiere a una observación que:',
+                options: ['Tiene un valor de X muy lejano a la media de X.', 'Tiene un valor de Y muy diferente al predicho por el modelo.', 'Siempre debe ser eliminado del conjunto de datos.', 'Tiene un R² muy bajo.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: '¿Cuál de los siguientes NO es un supuesto clave del modelo de regresión lineal clásico sobre los errores (ε)?',
+                options: ['Los errores tienen media cero.', 'Los errores tienen varianza constante (homocedasticidad).', 'Los errores siguen una distribución normal.', 'Los errores están correlacionados entre sí.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'Si un gráfico de residuos vs. valores ajustados muestra una forma de "cono", ¿qué supuesto se está violando?',
+                options: ['Linealidad.', 'Independencia de los errores.', 'Homocedasticidad (varianza constante).', 'Normalidad de los errores.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'Un modelo busca predecir el salario (en miles USD) con Años de Experiencia (Exp) y Nivel Educativo (Edu: 0=Pregrado, 1=Posgrado). El modelo es: Salario = 50 + 3*Exp + 10*Edu. ¿Cómo se interpreta el coeficiente de "Exp"?',
+                options: ['Por cada año de experiencia, el salario aumenta en $3,000.', 'Por cada año de experiencia, el salario aumenta en $3,000, manteniendo constante el nivel educativo.', 'Una persona sin experiencia y con pregrado gana $63,000.', 'La educación es 3.33 veces más importante que la experiencia.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: '¿Para qué se utiliza principalmente un gráfico Q-Q (Quantile-Quantile) de los residuos?',
+                options: ['Para verificar la linealidad.', 'Para detectar outliers.', 'Para evaluar el supuesto de normalidad de los residuos.', 'Para comprobar la independencia de los errores.']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: 'En un modelo de regresión múltiple con 100 observaciones y 4 variables predictoras (sin contar el intercepto), ¿cuántos grados de libertad tienen los residuos?',
+                options: ['100', '99', '96', '95']
+            },
+            {
+                section: "Regresión Lineal",
+                type: 'mc',
+                text: '¿Qué indica un p-valor pequeño (ej. < 0.05) para un coeficiente de regresión β₁?',
+                options: ['Que la variable predictora X no es importante para el modelo.', 'Que hay evidencia estadística para rechazar la hipótesis nula de que β₁ = 0.', 'Que el modelo tiene un ajuste perfecto a los datos.', 'Que los residuos son normales.']
+            },
+            // --- SECCIÓN 2: REGRESIÓN LOGÍSTICA ---
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'En regresión logística, la variable de respuesta (Y) es típicamente:',
+                options: ['Continua.', 'Categórica (usualmente binaria).', 'Un conteo.', 'Una tasa o proporción.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'La función que transforma la probabilidad en un rango de (-∞, +∞) en la regresión logística se llama:',
+                options: ['Función de activación.', 'Función de enlace (link function), específicamente la función logit.', 'Función de densidad de probabilidad.', 'Función de error.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'Si el coeficiente (β₁) para una variable X es 0.5, ¿cómo se interpreta el odds ratio (e^β₁)?',
+                options: ['Por cada unidad que aumenta X, la probabilidad de éxito aumenta en 0.5.', 'Por cada unidad que aumenta X, los odds (posibilidades) de éxito se multiplican por e^0.5 (aprox. 1.65).', 'La probabilidad de éxito es del 50%.', 'Los odds de éxito aumentan en 0.5.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: '¿Cuál de estas métricas NO se utiliza comúnmente para evaluar un modelo de regresión logística?',
+                options: ['Matriz de Confusión.', 'Curva ROC y AUC.', 'Error Cuadrático Medio (MSE).', 'Precisión (Accuracy).']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'En el contexto del dataset de donación de sangre, ¿qué representa la variable dependiente?',
+                options: ['La cantidad de sangre donada.', 'El número total de donaciones.', 'Si una persona donó sangre en marzo de 2007 o no.', 'El tiempo desde la última donación.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'Si el modelo predice una probabilidad de 0.8 para un individuo, significa que:',
+                options: ['Hay un 80% de probabilidad de que el individuo pertenezca a la clase "éxito" (ej. donó sangre).', 'El 80% de las predicciones del modelo son correctas.', 'La variable predictora más importante tiene un valor de 0.8.', 'El modelo está sobreajustado en un 80%.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'mc',
+                text: 'Supongamos que el coeficiente para la variable "Frecuencia (número de donaciones)" es positivo y significativo. ¿Qué implicaría esto?',
+                options: ['A mayor número de donaciones, menor es la probabilidad de donar en el futuro.', 'A mayor número de donaciones, mayores son los odds de donar en el futuro.', 'El número de donaciones no afecta la probabilidad de donar.', 'El modelo es incorrecto.']
+            },
+            {
+                section: "Regresión Logística",
+                type: 'open',
+                text: 'Basado en los resultados del modelo y tu propio análisis de los datos, ¿qué variable crees que sería el predictor más importante para determinar si alguien donará sangre y por qué? Justifica tu respuesta.',
+            },
+            {
+                section: "Regresión Logística",
+                type: 'open',
+                text: '¿Cómo evaluarías el rendimiento de este modelo de clasificación? Menciona y describe brevemente al menos dos métricas que utilizarías.',
+            },
+            {
+                section: "Regresión Logística",
+                type: 'open',
+                text: 'Propón una variable adicional que no se encuentre en el conjunto de datos original que podría ser útil para predecir la donación de sangre. Explica por qué crees que sería relevante.',
+            }
+        ];
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const endScreen = document.getElementById('end-screen');
+        
+        const startBtn = document.getElementById('start-btn');
+        const participantNameInput = document.getElementById('participant-name');
+        
+        const questionCounter = document.getElementById('question-counter');
+        const quizSection = document.getElementById('quiz-section');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const infoBox = document.getElementById('info-box');
+        const answerOptions = document.getElementById('answer-options');
+        const openAnswerContainer = document.getElementById('open-answer-container');
+        const openAnswerText = document.getElementById('open-answer-text');
+        const submitOpenAnswerBtn = document.getElementById('submit-open-answer-btn');
+        const submitResultsBtn = document.getElementById('submit-results-btn');
+        
+        const timerContainer = document.getElementById('timer-container');
+        const timerDisplay = document.getElementById('timer');
+        const endTitle = document.getElementById('end-title');
+        const endMessage = document.getElementById('end-message');
+
+        let currentQuestionIndex = 0;
+        let participantName = '';
+        let userAnswers = [];
+        let timerInterval;
+
+        startBtn.addEventListener('click', startGame);
+        submitOpenAnswerBtn.addEventListener('click', handleOpenAnswerSubmit);
+        submitResultsBtn.addEventListener('click', generatePDFReport);
+
+        function startTimer() {
+            const examDuration = 4 * 60 * 60 * 1000; // 4 horas en milisegundos
+            const endTime = new Date().getTime() + examDuration;
+
+            timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    clearInterval(timerInterval);
+                    endGame(true); // Finalizar por tiempo
+                    return;
+                }
+
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                timerDisplay.textContent = 
+                    (hours < 10 ? "0" : "") + hours + ":" + 
+                    (minutes < 10 ? "0" : "") + minutes + ":" + 
+                    (seconds < 10 ? "0" : "") + seconds;
+            }, 1000);
+        }
+
+        function startGame() {
+            participantName = participantNameInput.value.trim();
+            if (participantName === '') {
+                alert('Por favor, ingresa tu nombre para comenzar.');
+                return;
+            }
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            timerContainer.classList.remove('hidden');
+            startTimer();
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            answerOptions.innerHTML = '';
+            openAnswerContainer.classList.add('hidden');
+            openAnswerText.value = '';
+
+            if (currentQuestionIndex >= questions.length) {
+                endGame(false); // Finalizar por completar
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            
+            questionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+            quizSection.textContent = question.section;
+            progressBar.style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+            questionText.textContent = question.text;
+
+            if (question.section === "Regresión Logística" && currentQuestionIndex === 10) {
+                infoBox.classList.remove('hidden');
+                infoBox.innerHTML = `
+                    <h4 class="font-bold mb-2">Contexto del Ejercicio Práctico:</h4>
+                    <p>Para las siguientes preguntas, deberás analizar el conjunto de datos "Blood Transfusion Service Center". Descárgalo para explorarlo localmente y poder fundamentar tus respuestas.</p>
+                    <a href="https://archive.ics.uci.edu/dataset/176/blood+transfusion+service+center" target="_blank" class="inline-block mt-3 bg-indigo-100 text-indigo-800 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-200">
+                        Descargar Datos de UCI
+                    </a>
+                    <p class="mt-3">El objetivo es predecir si una persona donó sangre en marzo de 2007 (Variable Respuesta: 1=Sí, 0=No). Imagina que los resultados de un modelo logístico muestran que <b>Recencia</b> tiene un coeficiente negativo significativo y <b>Frecuencia</b> tiene un coeficiente positivo significativo.</p>
+                `;
+            } else {
+                 infoBox.classList.add('hidden');
+            }
+
+            if (question.type === 'mc') {
+                question.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.textContent = option;
+                    button.classList.add('option-btn', 'w-full', 'text-left', 'p-4', 'bg-slate-50', 'border', 'border-slate-200', 'rounded-lg', 'hover:bg-indigo-100', 'hover:border-indigo-300', 'focus:outline-none', 'focus:ring-2', 'focus:ring-indigo-500');
+                    button.onclick = () => selectAnswer(option);
+                    answerOptions.appendChild(button);
+                });
+            } else if (question.type === 'open') {
+                openAnswerContainer.classList.remove('hidden');
+            }
+        }
+
+        function selectAnswer(answer) {
+            userAnswers.push({ question: questions[currentQuestionIndex].text, answer: answer });
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        function handleOpenAnswerSubmit() {
+            const answer = openAnswerText.value.trim();
+            if (answer === '') {
+                alert('Por favor, escribe una respuesta.');
+                return;
+            }
+            userAnswers.push({ question: questions[currentQuestionIndex].text, answer: answer });
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        function endGame(timeUp = false) {
+            clearInterval(timerInterval);
+            timerContainer.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+
+            if (timeUp) {
+                endTitle.textContent = "¡El tiempo se ha agotado!";
+                endMessage.textContent = "El tiempo para completar el examen ha finalizado. Descarga el PDF con las respuestas que alcanzaste a registrar.";
+            }
+        }
+
+        function generatePDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            let y = 20;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 15;
+            const maxWidth = doc.internal.pageSize.width - margin * 2;
+
+            doc.setFontSize(18);
+            doc.text("Resultados del Examen de Aprendizaje Estadístico", margin, y);
+            y += 10;
+
+            doc.setFontSize(14);
+            doc.text(`Participante: ${participantName}`, margin, y);
+            y += 15;
+
+            userAnswers.forEach((item, index) => {
+                const questionLines = doc.splitTextToSize(`Pregunta ${index + 1}: ${item.question}`, maxWidth).length;
+                const answerLines = doc.splitTextToSize(`Respuesta: ${item.answer}`, maxWidth).length;
+                const requiredHeight = (questionLines * 7) + (answerLines * 7) + 10;
+                
+                if (y + requiredHeight > pageHeight - margin) {
+                    doc.addPage();
+                    y = 20;
+                }
+
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                let questionText = `Pregunta ${index + 1}: ${item.question}`;
+                let splitQuestion = doc.splitTextToSize(questionText, maxWidth);
+                doc.text(splitQuestion, margin, y);
+                y += (splitQuestion.length * 7);
+
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'normal');
+                let answerText = `Respuesta: ${item.answer}`;
+                let splitAnswer = doc.splitTextToSize(answerText, maxWidth);
+                doc.text(splitAnswer, margin, y);
+                y += (splitAnswer.length * 7) + 10;
+            });
+
+            const safeFileName = participantName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            doc.save(`resultados_examen_${safeFileName}.pdf`);
+        }
+
+    </script>
+</body>
+</html>
